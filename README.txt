@@ -1,3 +1,10 @@
+Extra notes:
+
+sudo python3 venv3/bin/python run.py
+
+
+------------------
+
 Author - David Gardner
 
 Credits - 

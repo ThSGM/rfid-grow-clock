@@ -7,11 +7,12 @@ import pathlib
 import time
 import configparser
 import threading
-from .oled.oled_pi import OLED
-from .oled.oled_window import OLEDWindow
+import screen2c
+# from .oled.oled_pi import OLED
+# from .oled.oled_window import OLEDWindow
 from datetime import datetime
-from .displayfonts import displayfonts
-from .weather import weather
+# from .displayfonts import displayfonts
+# from .weather import weather
 
 playmode = 0 #(0 - notset, 1 - MP3, 2 - CD)
 
@@ -22,7 +23,7 @@ class audiohandler(object):
         self.listplayer = self.instance.media_list_player_new()
         self.listplayer.set_media_player(self.player)
         self.playlist = {}
-        self.player.audio_set_volume(30)
+        self.player.audio_set_volume(90)
         self.volume = self.player.audio_get_volume()
         self.currenttrack = 0
         self.status = 0 #(0 - stopped, 1 - playing, 2 - paused, 3 - ended)
@@ -44,6 +45,7 @@ class audiohandler(object):
         
     def playmp3playlist(self, folder,cardtitle):
         global playmode
+        print('\a')
         self._displayupdate.showtext(2,"Loading " + cardtitle)
         playlist = {}
         filelist = []
@@ -79,8 +81,9 @@ class audiohandler(object):
         while not self.listplayer.is_playing():
             print("waiting for player")
             time.sleep(0.5)
+        print(self.playlist)
         displaytxt = str(self.currenttrack) + "-" + self.playlist[str(self.currenttrack)]['title']
-        self._displayupdate.showtext(1,self.playlist[str(self.currenttrack)]['album'])
+        # self._displayupdate.showtext(1,self.playlist[str(self.currenttrack)]['album'])
         self._displayupdate.showtext(2,displaytxt)
         
 
@@ -269,8 +272,9 @@ class audiohandler(object):
 class displayhandler(object):
     threads = list()
     lock = threading.Lock()
-    oled = OLED()
-    oled_win = OLEDWindow(oled,0,0,256,64)
+    mylcd = screen2c.Display()
+    # oled = OLED()
+    # oled_win = OLEDWindow(oled,0,0,256,64)
     _volclear = -1
     def __init__(self):
         print("Setting up clock thread")
@@ -278,17 +282,18 @@ class displayhandler(object):
         displayhandler.threads.append(self.clock)
         print("Starting clock threads")
         self.clock.start()
-        self.weatherupdater = threading.Thread(target=self._thread_weather, args=("weather",))
-        displayhandler.threads.append(self.weatherupdater)
-        print("Starting Weather Thread")
-        self.weatherupdater.start()
+
+        # self.weatherupdater = threading.Thread(target=self._thread_weather, args=("weather",))
+        # displayhandler.threads.append(self.weatherupdater)
+        # print("Starting Weather Thread")
+        # self.weatherupdater.start()
 
     def _thread_clock(self,id):
         lastrun_timelength = 4
         lastrun_time = ""
         while True:
             now = datetime.now()
-            current_time = now.strftime("%-I:%M")
+            current_time = now.strftime("    %I:%M%p")
             if current_time != lastrun_time:
                 currentrun_timelength = len(current_time)
                 if currentrun_timelength < lastrun_timelength :
@@ -301,20 +306,26 @@ class displayhandler(object):
                     xstart = 80
                 displayhandler.lock.acquire()
                 if clrclkdisplay:
-                    displayhandler.oled_win.draw_bw_image(68,0,24,48,8,displayfonts.CLK[" "],0)
-                    displayhandler.oled_win.draw_bw_image(164,0,24,48,8,displayfonts.CLK[" "],0)
+                    print("clrclkdisplay")
+                    displayhandler.mylcd.clear()
+                    # displayhandler.oled_win.draw_bw_image(68,0,24,48,8,displayfonts.CLK[" "],0)
+                    # displayhandler.oled_win.draw_bw_image(164,0,24,48,8,displayfonts.CLK[" "],0)
                 try:
-                    for c in range(len(current_time)):
-                        displayhandler.oled_win.draw_bw_image(xstart,0,24,48,8,displayfonts.CLK[current_time[c]],0)
-                        xstart = xstart + 24 
-                    displayhandler.oled_win.draw_screen_buffer()
+                    # for c in range(len(current_time)):
+                    #     displayhandler.oled_win.draw_bw_image(xstart,0,24,48,8,displayfonts.CLK[current_time[c]],0)
+                    #     xstart = xstart + 24 
+                    # displayhandler.oled_win.draw_screen_buffer()
+                    print("Writing current time")
+                    print(current_time)
+                    displayhandler.mylcd.write(current_time, 1)
                     displayhandler.lock.release()
                 finally:
                     lastrun_timelength = currentrun_timelength
                 if displayhandler._volclear == 0:
                     displayhandler.lock.acquire()
-                    displayhandler.oled_win.draw_text(200,32,"       ",8)
-                    displayhandler.oled_win.draw_screen_buffer()
+                    # displayhandler.oled_win.draw_text(200,32,"       ",8)
+                    # displayhandler.oled_win.draw_screen_buffer()
+                    print("volclear = 0")
                     displayhandler.lock.release()
                     displayhandler._volclear = -1
                 elif displayhandler._volclear > 0:
@@ -322,16 +333,18 @@ class displayhandler(object):
             lastrun_time = current_time
             time.sleep(2)
 
-    def _thread_weather(self,id):
-        while True:
-            print("Checking Weather")
-            myweather = weather()
-            symbol = myweather.getweather()
-            displayhandler.lock.acquire()
-            displayhandler.oled_win.draw_bw_image(4,4,32,32,8,displayfonts.WEATHER[symbol],0)
-            displayhandler.oled_win.draw_screen_buffer()
-            displayhandler.lock.release()
-            time.sleep(900)
+    # def _thread_weather(self,id):
+    #     while True:
+    #         print("Checking Weather in AUDIO")
+    #         myweather = weather()
+    #         symbol = myweather.getweather()
+    #         displayhandler.lock.acquire()
+    #         print(myweather)
+    #         print(symbol)
+    #         # displayhandler.oled_win.draw_bw_image(4,4,32,32,8,displayfonts.WEATHER[symbol],0)
+    #         # displayhandler.oled_win.draw_screen_buffer()
+    #         displayhandler.lock.release()
+    #         time.sleep(900)
             
 
 
@@ -351,23 +364,26 @@ class displayupdate(object):
         
     def showtext(self,line,text):
         clearstr = "                                "
-        displaytext = text[0:32]
+        displaytext = text[0:16]
         displayhandler.lock.acquire()
-        displayhandler.oled_win.draw_text(2,self._getlinestart(line),clearstr,8)
-        displayhandler.oled_win.draw_text(2,self._getlinestart(line),displaytext,8)
-        displayhandler.oled_win.draw_screen_buffer()
+        displayhandler.mylcd.write(displaytext, 2)
+        # displayhandler.oled_win.draw_text(2,self._getlinestart(line),clearstr,8)
+        # displayhandler.oled_win.draw_text(2,self._getlinestart(line),displaytext,8)
+        # displayhandler.oled_win.draw_screen_buffer()
         displayhandler.lock.release()
     def cleartext(self,line):
         clearstr = "                                "
         displayhandler.lock.acquire()
-        displayhandler.oled_win.draw_text(2,self._getlinestart(line),clearstr,8)
-        displayhandler.oled_win.draw_screen_buffer()
+        displayhandler.mylcd.clear()
+        # displayhandler.oled_win.draw_text(2,self._getlinestart(line),clearstr,8)
+        # displayhandler.oled_win.draw_screen_buffer()
         displayhandler.lock.release()
 
     def showsymbol(self,symbol):
         displayhandler.lock.acquire()
-        displayhandler.oled_win.draw_bw_image(239,0,16,16,8,displayfonts.SYM[symbol],0)
-        displayhandler.oled_win.draw_screen_buffer()
+        print("Wanting to show symbol on display...")
+        # displayhandler.oled_win.draw_bw_image(239,0,16,16,8,displayfonts.SYM[symbol],0)
+        # displayhandler.oled_win.draw_screen_buffer()
         displayhandler.lock.release()
 
     def showvol(self,volume):
@@ -378,8 +394,9 @@ class displayupdate(object):
         if len(str(volume)) < 3:
             volume = volume + " "
         displayhandler.lock.acquire()
-        displayhandler.oled_win.draw_text(200,32,"Vol:"+str(volume),8)
-        displayhandler.oled_win.draw_screen_buffer()
+        # displayhandler.oled_win.draw_text(200,32,"Vol:"+str(volume),8)
+        # displayhandler.oled_win.draw_screen_buffer()
+        displayhandler.mylcd.write("Vol:"+str(volume), 2)
         displayhandler._volclear = 3
         displayhandler.lock.release()    
 

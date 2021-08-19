@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+# import os
 import sys
 import RPi.GPIO as GPIO
 from libs.pirc522 import RFID
@@ -7,7 +8,8 @@ import threading
 import time
 from .threadcontrol import threadcontrol
 import configparser
-from .displayhandler import displayfonts, displayupdate
+# from .displayhandler import displayfonts, displayupdate
+# from .displayhandler import displayupdate
 from datetime import datetime, timedelta
 import cherrypy
 from jinja2 import Environment, FileSystemLoader
@@ -17,8 +19,8 @@ class iocontrol(object):
 	def __init__(self):
 		GPIO.setmode(GPIO.BCM)
 		#Define GPIO for buttons
-		self.button_voldown = 2
-		self.button_volup = 3
+		# self.button_voldown = 2
+		# self.button_volup = 3
 		self.button_next = 14
 		self.button_play = 15
 		self.button_previous = 4
@@ -30,8 +32,8 @@ class iocontrol(object):
 		self.green_LED = 13
 		
 		#setup GPIO for input with inbuilt resistors
-		GPIO.setup(self.button_volup, GPIO.IN)
-		GPIO.setup(self.button_voldown, GPIO.IN)
+		# GPIO.setup(self.button_volup, GPIO.IN)
+		# GPIO.setup(self.button_voldown, GPIO.IN)
 		GPIO.setup(self.button_next, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 		GPIO.setup(self.button_play, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 		GPIO.setup(self.button_previous, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -45,8 +47,8 @@ class iocontrol(object):
 		GPIO.setup(self.green_LED, GPIO.OUT, initial=GPIO.HIGH)
 		
 		#setup call back events
-		GPIO.add_event_detect(self.button_voldown, GPIO.FALLING, callback=self._callback_voldown, bouncetime=200 ) # need to pass vlc instance to the call back function
-		GPIO.add_event_detect(self.button_volup, GPIO.FALLING, callback=self._callback_volup, bouncetime=200 )
+		# GPIO.add_event_detect(self.button_voldown, GPIO.FALLING, callback=self._callback_voldown, bouncetime=200 ) # need to pass vlc instance to the call back function
+		# GPIO.add_event_detect(self.button_volup, GPIO.FALLING, callback=self._callback_volup, bouncetime=200 )
 		GPIO.add_event_detect(self.button_next, GPIO.RISING, callback=self._callback_next, bouncetime=400 )
 		GPIO.add_event_detect(self.button_play, GPIO.RISING, callback=self._callback_play, bouncetime=400 )
 		GPIO.add_event_detect(self.button_previous, GPIO.RISING, callback=self._callback_previous, bouncetime=400 )
@@ -176,6 +178,7 @@ class iocontrol(object):
 		playtimeactive = -1
 		alarmtriggered = 0
 		while threadcontrol.controlsig:
+			# print(os.getcwd())
 			threadcontrol.alarmconfig.read("./db/alarm.ini")
 			if int(threadcontrol.alarmconfig['alarm']['alarmset']) == 1:
 				now = datetime.now()
@@ -263,11 +266,11 @@ def format_2digitnumber(value):
 
 def startwebadmin():
 	#Start Web Admin
-	cherrypy.quickstart(WebAdmin(),'/','/mnt/development/python/aclock/clock/web/webapp.config')
+	cherrypy.quickstart(WebAdmin(),'/','/home/pi/GrowClock3/rfid-grow-clock/web/webapp.config')
 
 def stopwebadmin():
 	cherrypy.engine.exit()
 
 #Define Web Admin Environment
-env = Environment(loader=FileSystemLoader('/mnt/development/python/aclock/clock/web/templates'))
+env = Environment(loader=FileSystemLoader('/home/pi/GrowClock3/rfid-grow-clock/web/templates'))
 env.filters['f2digit'] = format_2digitnumber

@@ -39,11 +39,11 @@ def format_2digitnumber(value):
 
 def startwebadmin():
     #Start Web Admin
-    cherrypy.quickstart(WebAdmin(),'/','/mnt/development/python/aclock/clock/web') #Need to updated to absolute file path of code, cherrypy doesnt like relative addressing
+    cherrypy.quickstart(WebAdmin(),'/','/home/pi/GrowClock3/rfid-grow-clock/web') #Need to updated to absolute file path of code, cherrypy doesnt like relative addressing
 
 def stopwebadmin():
     cherrypy.engine.exit()
     
 #Define Web Admin Environment
-env = Environment(loader=FileSystemLoader('/mnt/development/python/aclock/clock/web/templates')) #Need to updated to absolute file path of tempalates directory, cherrypy doesnt like relative addressing
+env = Environment(loader=FileSystemLoader('/home/pi/GrowClock3/rfid-grow-clock/web/templates')) #Need to updated to absolute file path of tempalates directory, cherrypy doesnt like relative addressing
 env.filters['f2digit'] = format_2digitnumber
